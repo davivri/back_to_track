@@ -1,0 +1,1980 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Krücken-Entwöhnung Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .week-selector {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .week-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .week-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .week-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .day-card {
+            margin: 15px 20px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s;
+        }
+
+        .day-card.completed {
+            border-color: #4caf50;
+            background: #f8fff8;
+        }
+
+        .day-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .day-card.completed .day-header {
+            background: #e8f5e8;
+        }
+
+        .day-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .completion-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+        }
+
+        .day-content {
+            padding: 15px;
+        }
+
+        .training-item {
+            margin-bottom: 12px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .training-label {
+            font-weight: 500;
+            color: #555;
+            margin-bottom: 5px;
+        }
+
+        .training-value {
+            color: #333;
+        }
+
+        .goal {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+            font-weight: 500;
+        }
+
+        .progress-summary {
+            margin: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4caf50, #8bc34a);
+            transition: width 0.5s ease;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .reset-btn {
+            background: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 20px;
+            float: right;
+        }
+
+        .reset-btn:hover {
+            background: #c82333;
+        }
+
+        .exercise-help {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: 8px;
+            font-weight: bold;
+        }
+
+        .exercise-help:hover {
+            background: #5a6fd8;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            position: absolute;
+            right: 15px;
+            top: 10px;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .exercise-instruction h3 {
+            color: #667eea;
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        .exercise-instruction h4 {
+            color: #555;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        .exercise-instruction ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+        }
+
+        .exercise-instruction li {
+            margin-bottom: 5px;
+        }
+
+        .exercise-instruction p {
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .week-selector {
+                padding: 0 10px;
+            }
+            
+            .week-btn {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>6-Wochen Krücken-Entwöhnung</h1>
+            <p>Verfolge deinen Fortschritt Tag für Tag</p>
+        </div>
+
+        <div class="week-selector">
+            <button class="week-btn active" onclick="showWeek(1)">Woche 1</button>
+            <button class="week-btn" onclick="showWeek(2)">Woche 2</button>
+            <button class="week-btn" onclick="showWeek(3)">Woche 3</button>
+            <button class="week-btn" onclick="showWeek(4)">Woche 4</button>
+            <button class="week-btn" onclick="showWeek(5)">Woche 5</button>
+            <button class="week-btn" onclick="showWeek(6)">Woche 6</button>
+        </div>
+
+        <div class="progress-summary">
+            <h3>Gesamtfortschritt</h3>
+            <div class="progress-bar">
+                <div class="progress-fill" id="overallProgress"></div>
+            </div>
+            <p id="progressText">0 von 42 Tagen abgeschlossen (0%)</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="currentWeekStat">1</div>
+                <div class="stat-label">Aktuelle Woche</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="completedDaysStat">0</div>
+                <div class="stat-label">Abgeschlossene Tage</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="streakStat">0</div>
+                <div class="stat-label">Aktuelle Serie</div>
+            </div>
+        </div>
+
+        <div id="weekContent"></div>
+
+        <button class="reset-btn" onclick="resetProgress()">Fortschritt zurücksetzen</button>
+    </div>
+
+    <!-- Modal for exercise instructions -->
+    <div id="exerciseModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <div id="exerciseContent" class="exercise-instruction"></div>
+        </div>
+    </div>
+
+    <script>
+        const trainingPlan = {
+            1: {
+                title: "WOCHE 1: Erste Schritte ohne Krücken",
+                goal: "300 Schritte am Stück schaffen",
+                days: {
+                    "Fr": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 50 Schritte",
+                        additional: "Einbeinstand 30s (2x), Wadenheben sitzend 15x",
+                        target: "50 Schritte"
+                    },
+                    "Sa": {
+                        existing: "Bodyweight & Yoga",
+                        walking: "Nach Yoga: 3min Wohnung",
+                        additional: "Gewichtsverlagerung stehend, Balance weiche Matte",
+                        target: "100 Schritte"
+                    },
+                    "So": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 100 Schritte",
+                        additional: "Fußalphabet, Mini-Squats mit Halt 8x",
+                        target: "150 Schritte"
+                    },
+                    "Mo": {
+                        existing: "Bodyweight & Yoga",
+                        walking: "Gang-Analyse Spiegel 5min",
+                        additional: "Heel-to-toe 10 Schritte, Achillessehne dehnen",
+                        target: "200 Schritte"
+                    },
+                    "Di": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 200 Schritte",
+                        additional: "Zehengang sitzend, Hüftbeuger dehnen",
+                        target: "250 Schritte"
+                    },
+                    "Mi": {
+                        existing: "Schwimmen",
+                        walking: "Aqua-Walking 8min",
+                        additional: "Treppen 3 Stufen rauf/runter, entspannen",
+                        target: "150 Schritte"
+                    },
+                    "Do": {
+                        existing: "Bodyweight & Yoga",
+                        walking: "Park: 300 Schritte am Stück",
+                        additional: "Propriozeption, Woche reflektieren",
+                        target: "300 Schritte"
+                    }
+                }
+            },
+            2: {
+                title: "WOCHE 2: Aufbau und Festigung",
+                goal: "600 Schritte am Stück schaffen",
+                days: {
+                    "Fr": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 350 Schritte",
+                        additional: "Einbeinstand 35s (3x), Wadenheben sitzend 20x",
+                        target: "400 Schritte"
+                    },
+                    "Sa": {
+                        existing: "Bodyweight & Yoga",
+                        walking: "Nach Yoga: 5min Wohnung + 2min draußen",
+                        additional: "Tandem-walk 15 Schritte, Balance Kissen",
+                        target: "450 Schritte"
+                    },
+                    "So": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 450 Schritte",
+                        additional: "Mini-Squats 10x, Knie-Flexion verstärkt",
+                        target: "500 Schritte"
+                    },
+                    "Mo": {
+                        existing: "Yoga",
+                        walking: "8min entspannter Gang",
+                        additional: "Richtungsänderungen 90°, Koordination",
+                        target: "550 Schritte"
+                    },
+                    "Di": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 500 Schritte",
+                        additional: "Step-ups 8x, Wadendehnung",
+                        target: "600 Schritte"
+                    },
+                    "Mi": {
+                        existing: "Schwimmen",
+                        walking: "Aqua-Walking 12min",
+                        additional: "Treppen 5 Stufen, verschiedene Tempi",
+                        target: "400 Schritte"
+                    },
+                    "Do": {
+                        existing: "Yoga",
+                        walking: "Park: 600 Schritte kontinuierlich",
+                        additional: "Lateral Steps, Erfolg feiern",
+                        target: "600 Schritte"
+                    }
+                }
+            },
+            3: {
+                title: "WOCHE 3: Kontinuierliches Gehen",
+                goal: "10 Minuten am Stück gehen",
+                days: {
+                    "Fr": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 7min kontinuierlich",
+                        additional: "Einbeinstand 40s, Wadenheben stehend 12x",
+                        target: "8min total"
+                    },
+                    "Sa": {
+                        existing: "Yoga",
+                        walking: "Nach Yoga: Wohnung komplett + 3min draußen",
+                        additional: "Tandem-walk 20 Schritte, Balance-Training",
+                        target: "9min total"
+                    },
+                    "So": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 8min Park",
+                        additional: "Resistance Band Übungen, Step-ups 10x",
+                        target: "10min total"
+                    },
+                    "Mo": {
+                        existing: "Yoga",
+                        walking: "9min verschiedene Richtungen",
+                        additional: "180°-Wendungen, Heel-to-toe 15 Schritte",
+                        target: "11min total"
+                    },
+                    "Di": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 9min unterschiedliche Tempi",
+                        additional: "Mini-Squats freistehend 8x, Mobilisation",
+                        target: "12min total"
+                    },
+                    "Mi": {
+                        existing: "Schwimmen",
+                        walking: "Aqua-Jogging 15min",
+                        additional: "Treppen 1 Stockwerk, Koordination",
+                        target: "8min Land"
+                    },
+                    "Do": {
+                        existing: "Yoga",
+                        walking: "Park: 10min am Stück ohne Pause",
+                        additional: "Alle Übungen kombinieren",
+                        target: "10min am Stück"
+                    }
+                }
+            },
+            4: {
+                title: "WOCHE 4: Distanz und Ausdauer",
+                goal: "15 Minuten kontinuierlich + verschiedene Untergründe",
+                days: {
+                    "Fr": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 12min Park verschiedene Wege",
+                        additional: "Einbeinstand 45s, dynamische Balance",
+                        target: "15min total"
+                    },
+                    "Sa": {
+                        existing: "Yoga",
+                        walking: "Nach Yoga: 10min + erste Besorgungen zu Fuß",
+                        additional: "Funktionelle Bewegungen, Alltagsintegration",
+                        target: "18min total"
+                    },
+                    "So": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 13min mit Tempoänderungen",
+                        additional: "Step-ups 12x, Koordination unter Belastung",
+                        target: "20min total"
+                    },
+                    "Mo": {
+                        existing: "Yoga",
+                        walking: "12min + leichte Unebenheiten (Rasen/Kies)",
+                        additional: "Reaktions-Training, verschiedene Untergründe",
+                        target: "22min total"
+                    },
+                    "Di": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 14min + Steigungen",
+                        additional: "Wadenheben einbeinig 8x, Kraft unter Last",
+                        target: "25min total"
+                    },
+                    "Mi": {
+                        existing: "Schwimmen",
+                        walking: "Aqua-Jogging 18min + 10min Land-Walking",
+                        additional: "Treppen 2 Stockwerke, Komplexbewegungen",
+                        target: "15min Land"
+                    },
+                    "Do": {
+                        existing: "Yoga",
+                        walking: "Park: 15min kontinuierlich ohne Unterbrechung",
+                        additional: "Gangbild optimieren, Selbstvertrauen",
+                        target: "15min am Stück"
+                    }
+                }
+            },
+            5: {
+                title: "WOCHE 5: Alltagsintegration",
+                goal: "20 Minuten + Krücken nur noch bei Bedarf",
+                days: {
+                    "Fr": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 16min + Einkauf zu Fuß",
+                        additional: "Einbeinstand 50s, Wadenheben einbeinig 10x",
+                        target: "25min total"
+                    },
+                    "Sa": {
+                        existing: "Yoga",
+                        walking: "Nach Yoga: 15min + alle Wege in Wohnung",
+                        additional: "Balance Augen geschlossen, Propriozeption",
+                        target: "30min total"
+                    },
+                    "So": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 17min verschiedene Geschwindigkeiten",
+                        additional: "Mini-Squats ohne Halt 10x, Step-ups 15x",
+                        target: "35min total"
+                    },
+                    "Mo": {
+                        existing: "Yoga",
+                        walking: "18min + Treppen in Gebäuden ohne Krücken",
+                        additional: "Komplexe Koordination, Multitasking",
+                        target: "40min total"
+                    },
+                    "Di": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 19min + unebene Wege",
+                        additional: "Reaktionstraining, Gleichgewichtstests",
+                        target: "45min total"
+                    },
+                    "Mi": {
+                        existing: "Schwimmen",
+                        walking: "Aqua-Jogging 20min + 15min Land-Walking",
+                        additional: "Treppen mehrere Stockwerke, Ausdauer",
+                        target: "20min Land"
+                    },
+                    "Do": {
+                        existing: "Yoga",
+                        walking: "Park: 20min Spaziergang (Krücken nur dabei, nicht benutzt)",
+                        additional: "Selbständigkeit testen, Vertrauen festigen",
+                        target: "20min ohne Krücken"
+                    }
+                }
+            },
+            6: {
+                title: "WOCHE 6: Selbstständigkeit",
+                goal: "30+ Minuten + Krücken nur noch als Backup",
+                days: {
+                    "Fr": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 22min + längere Besorgungen",
+                        additional: "Einbeinstand 60s, alle Kraft-Übungen steigern",
+                        target: "30min total"
+                    },
+                    "Sa": {
+                        existing: "Yoga",
+                        walking: "Nach Yoga: 20min + kompletter normaler Tag zu Fuß",
+                        additional: "Komplexe Balance, Augen geschlossen",
+                        target: "45min total"
+                    },
+                    "So": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 25min + verschiedene Herausforderungen",
+                        additional: "Alle Koordinationsübungen kombinieren",
+                        target: "50min total"
+                    },
+                    "Mo": {
+                        existing: "Yoga",
+                        walking: "25min + öffentliche Verkehrsmittel/Bahnhof zu Fuß",
+                        additional: "Realitätstest, Menschenmengen, Stress",
+                        target: "60min total"
+                    },
+                    "Di": {
+                        existing: "Fahrrad 45min/150W",
+                        walking: "Nach Fahrrad: 28min + längere Outdoor-Strecken",
+                        additional: "Ausdauer-Test, verschiedene Untergründe",
+                        target: "70min total"
+                    },
+                    "Mi": {
+                        existing: "Schwimmen",
+                        walking: "Aqua-Jogging 20min + 20min Land-Walking",
+                        additional: "Maximaler Treppen-Test, Konditions-Check",
+                        target: "30min Land"
+                    },
+                    "Do": {
+                        existing: "Yoga",
+                        walking: "Park: 30min+ Spaziergang ohne Krücken",
+                        additional: "Ziel erreicht! Fortschritt evaluieren",
+                        target: "30min+ selbstständig"
+                    }
+                }
+            }
+        };
+
+        let currentWeek = 1;
+        let completedDays = JSON.parse(localStorage.getItem('completedDays') || '{}');
+
+        function showWeek(week) {
+            currentWeek = week;
+            
+            // Update active button
+            document.querySelectorAll('.week-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.week-btn')[week - 1].classList.add('active');
+            
+            // Render week content
+            renderWeek(week);
+            updateStats();
+        }
+
+        function renderWeek(week) {
+            const weekData = trainingPlan[week];
+            const content = document.getElementById('weekContent');
+            
+            let html = `
+                <div style="margin: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; text-align: center;">
+                    <h2>${weekData.title}</h2>
+                    <p><strong>Ziel:</strong> ${weekData.goal}</p>
+                </div>
+            `;
+            
+            Object.entries(weekData.days).forEach(([day, data]) => {
+                const dayKey = `${week}-${day}`;
+                const isCompleted = completedDays[dayKey] || false;
+                const exercises = getExerciseHelp(data.additional);
+                
+                let exerciseHelpButtons = '';
+                exercises.forEach(exercise => {
+                    exerciseHelpButtons += `<span class="exercise-help" onclick="showExerciseInstructions('${exercise.name}')" title="${exercise.display} Anleitung">?</span>`;
+                });
+                
+                html += `
+                    <div class="day-card ${isCompleted ? 'completed' : ''}">
+                        <div class="day-header">
+                            <div class="day-title">${day}</div>
+                            <input type="checkbox" class="completion-checkbox" 
+                                   ${isCompleted ? 'checked' : ''} 
+                                   onchange="toggleDay('${dayKey}')">
+                        </div>
+                        <div class="day-content">
+                            <div class="training-item">
+                                <div class="training-label">Bestehendes Training:</div>
+                                <div class="training-value">${data.existing}</div>
+                            </div>
+                            <div class="training-item">
+                                <div class="training-label">Geh-Training ohne Krücken:</div>
+                                <div class="training-value">${data.walking}</div>
+                            </div>
+                            <div class="training-item">
+                                <div class="training-label">Zusätzliche Übungen:</div>
+                                <div class="training-value">${data.additional}${exerciseHelpButtons}</div>
+                            </div>
+                            <div class="training-item goal">
+                                <div class="training-label">Tagesziel:</div>
+                                <div class="training-value">${data.target}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content.innerHTML = html;
+        }
+
+        function toggleDay(dayKey) {
+            completedDays[dayKey] = !completedDays[dayKey];
+            if (!completedDays[dayKey]) {
+                delete completedDays[dayKey];
+            }
+            localStorage.setItem('completedDays', JSON.stringify(completedDays));
+            renderWeek(currentWeek);
+            updateStats();
+        }
+
+        function updateStats() {
+            const totalDays = 42;
+            const completed = Object.keys(completedDays).length;
+            const percentage = Math.round((completed / totalDays) * 100);
+            
+            // Update progress bar
+            document.getElementById('overallProgress').style.width = percentage + '%';
+            document.getElementById('progressText').textContent = 
+                `${completed} von ${totalDays} Tagen abgeschlossen (${percentage}%)`;
+            
+            // Update stats cards
+            document.getElementById('currentWeekStat').textContent = currentWeek;
+            document.getElementById('completedDaysStat').textContent = completed;
+            
+            // Calculate streak
+            const streak = calculateStreak();
+            document.getElementById('streakStat').textContent = streak;
+        }
+
+        function calculateStreak() {
+            let streak = 0;
+            const today = new Date();
+            const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+            
+            // Start from today and go backwards
+            for (let i = 0; i < 42; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() - i);
+                
+                // Find which week and day this corresponds to
+                let found = false;
+                for (let week = 1; week <= 6; week++) {
+                    for (let dayName of Object.keys(trainingPlan[week].days)) {
+                        const dayKey = `${week}-${dayName}`;
+                        if (completedDays[dayKey]) {
+                            if (i === 0) {
+                                streak = 1;
+                                found = true;
+                                break;
+                            } else if (streak > 0) {
+                                streak++;
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (found) break;
+                }
+                
+                if (!found && streak === 0) {
+                    continue;
+                } else if (!found) {
+                    break;
+                }
+            }
+            
+            return streak;
+        }
+
+        function resetProgress() {
+            if (confirm('Möchtest du wirklich den gesamten Fortschritt zurücksetzen?')) {
+                localStorage.removeItem('completedDays');
+                completedDays = {};
+                renderWeek(currentWeek);
+                updateStats();
+            }
+        }
+
+        // Exercise instructions database
+        const exerciseInstructions = {
+            'wadenheben': {
+                title: 'Wadenheben - Schritt für Schritt',
+                content: `
+                    <h3>Sitzende Variante (Woche 1-2)</h3>
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Setze dich auf einen stabilen Stuhl mit Rückenlehne</li>
+                        <li>Beide Füße komplett flach auf den Boden</li>
+                        <li>Knie im 90°-Winkel, Füße hüftbreit auseinander</li>
+                        <li>Oberkörper aufrecht, nicht anlehnen</li>
+                        <li>Hände locker auf den Oberschenkeln oder an Stuhlkanten</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li><strong>Startposition:</strong> Beide Fersen fest am Boden</li>
+                        <li><strong>Hochheben:</strong> Nur die Fersen vom Boden abheben, Zehen bleiben am Boden</li>
+                        <li><strong>Endposition:</strong> So hoch wie möglich auf die Zehenspitzen</li>
+                        <li><strong>Halten:</strong> 2 Sekunden bewusst halten</li>
+                        <li><strong>Senken:</strong> Langsam und kontrolliert zurück, nicht "fallenlassen"</li>
+                        <li><strong>Atmung:</strong> Einatmen beim Hochgehen, Ausatmen beim Senken</li>
+                    </ul>
+                    
+                    <h4>Häufige Fehler:</h4>
+                    <ul>
+                        <li>Zehen heben sich mit (nur Fersen heben!)</li>
+                        <li>Zu schnelle Bewegung</li>
+                        <li>Nicht gleichmäßige Belastung beider Füße</li>
+                        <li>Mit dem Oberkörper "mithelfen"</li>
+                    </ul>
+                    
+                    <h4>Anpassung für Arthrodese:</h4>
+                    <ul>
+                        <li>Bewegung kommt hauptsächlich aus der Wade, nicht aus dem Sprunggelenk</li>
+                        <li>Operiertes Bein bewusst gleichmäßig belasten</li>
+                        <li>Bei Schmerz in den Platten sofort aufhören</li>
+                    </ul>
+                    
+                    <h3>Stehende Variante (Woche 3-4)</h3>
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe mit dem Rücken 30cm vor einer Wand</li>
+                        <li>Füße parallel, hüftbreit</li>
+                        <li>Hände leicht an der Wand zur Stabilität (nicht stützen!)</li>
+                        <li>Gewicht gleichmäßig auf beide Füße verteilt</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li><strong>Vorbereitung:</strong> Kurz das Gleichgewicht finden</li>
+                        <li><strong>Hochdrücken:</strong> Beide Fersen gleichzeitig abheben</li>
+                        <li><strong>Kontrolle:</strong> Darauf achten, dass beide Beine gleich arbeiten</li>
+                        <li><strong>Spitzenposition:</strong> 3 Sekunden halten</li>
+                        <li><strong>Rückkehr:</strong> Sehr langsam senken, Aufprall vermeiden</li>
+                    </ul>
+                    
+                    <h4>Progressionstipps:</h4>
+                    <ul>
+                        <li><strong>Woche 3:</strong> Hände an Wand, bei Unsicherheit sofort stützen</li>
+                        <li><strong>Woche 4:</strong> Fingerspitzen an Wand, nur bei Balance-Verlust stützen</li>
+                    </ul>
+                    
+                    <h4>Sicherheit:</h4>
+                    <ul>
+                        <li>Wand immer im Rücken als Schutz vor Rückwärts-Sturz</li>
+                        <li>Bei Schwindel sofort abbrechen</li>
+                    </ul>
+                    
+                    <h3>Einbeinige Variante (Woche 5-6)</h3>
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe seitlich neben Wand/Geländer</li>
+                        <li>Eine Hand am Geländer (nicht festhalten, nur berühren)</li>
+                        <li>Gesundes Bein leicht anheben (10cm vom Boden)</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li><strong>Balance finden:</strong> Erst sicher auf operiertem Bein stehen</li>
+                        <li><strong>Wadenheben:</strong> Nur mit operiertem Bein</li>
+                        <li><strong>Konzentration:</strong> Alle Kraft aus der operierten Wade</li>
+                        <li><strong>Kontrolle:</strong> Hand nur zur Sicherheit, nicht zum Stützen nutzen</li>
+                    </ul>
+                    
+                    <h4>Stop-Kriterien:</h4>
+                    <ul>
+                        <li>Schmerz an der Operationsstelle</li>
+                        <li>Instabilitätsgefühl</li>
+                        <li>Krampf in der Wade</li>
+                        <li>Übermäßiges Wackeln</li>
+                    </ul>
+                `
+            },
+            'mini-squats': {
+                title: 'Mini-Squats (Kniebeugen)',
+                content: `
+                    <h3>Mit Wandhalt (Woche 1-4)</h3>
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe mit Rücken zur Wand, 30cm Abstand</li>
+                        <li>Füße schulterbreit, Zehenspitzen leicht nach außen (15°)</li>
+                        <li><strong>Wichtig:</strong> Hände VOR dem Körper an die Wand, nicht seitlich!</li>
+                        <li>Gewicht auf beide Fersen, nicht auf Zehenspitzen</li>
+                    </ul>
+                    
+                    <h4>Detaillierte Bewegung:</h4>
+                    <ul>
+                        <li><strong>Start:</strong> Aufrechte Haltung, Bauchspannung</li>
+                        <li><strong>Hinsetzen:</strong> Als würdest du dich auf einen Stuhl setzen</li>
+                        <li><strong>Knie-Richtung:</strong> Knie zeigen in Richtung der Zehenspitzen</li>
+                        <li><strong>Tiefe:</strong> Nur 30-45°, als würdest du einen hohen Barhocker berühren</li>
+                        <li><strong>Pause:</strong> 2 Sekunden in der tiefsten Position</li>
+                        <li><strong>Hochdrücken:</strong> Kraft aus den Fersen, nicht aus Zehenspitzen</li>
+                    </ul>
+                    
+                    <h4>Gewichtsverteilung bei Arthrodese:</h4>
+                    <ul>
+                        <li>Bewusst 50/50 auf beide Beine verteilen</li>
+                        <li>Nicht das operierte Bein schonen</li>
+                        <li>Hand-Unterstützung nur bei Balance-Problemen</li>
+                    </ul>
+                    
+                    <h4>Progression:</h4>
+                    <ul>
+                        <li><strong>Woche 1:</strong> Hände fest an Wand stützen</li>
+                        <li><strong>Woche 2:</strong> Hände an Wand, weniger stützen</li>
+                        <li><strong>Woche 3:</strong> Fingerspitzen an Wand</li>
+                        <li><strong>Woche 4:</strong> Hände vor Wand, nur bei Bedarf berühren</li>
+                    </ul>
+                    
+                    <h3>Freistehende Squats (Woche 5-6)</h3>
+                    <h4>Neue Elemente:</h4>
+                    <ul>
+                        <li><strong>Arme:</strong> Nach vorne strecken als Gegengewicht</li>
+                        <li><strong>Balance:</strong> Komplett ohne Wandkontakt</li>
+                        <li><strong>Konzentration:</strong> Mehr auf Körpergefühl achten</li>
+                    </ul>
+                    
+                    <h4>Sicherheitsvorkehrungen:</h4>
+                    <ul>
+                        <li>Weicher Untergrund (Teppich/Matte)</li>
+                        <li>Stuhl hinter dir als Notfall-Sitz</li>
+                        <li>Jemand in der Nähe, der helfen kann</li>
+                    </ul>
+                `
+            },
+            'einbeinstand': {
+                title: 'Einbeinstand',
+                content: `
+                    <h3>Mit Halt (Woche 1-2)</h3>
+                    <h4>Setup:</h4>
+                    <ul>
+                        <li>Stelle dich seitlich neben eine Wand oder stabilen Tisch</li>
+                        <li>Eine Hand locker auf die Oberfläche legen</li>
+                        <li>Nicht festhalten! Nur leichter Kontakt</li>
+                    </ul>
+                    
+                    <h4>Übungsablauf:</h4>
+                    <ul>
+                        <li><strong>Beide Beine:</strong> Erst normal stehen, Balance finden</li>
+                        <li><strong>Bein heben:</strong> Gesundes Bein 10-15cm vom Boden</li>
+                        <li><strong>Fokus:</strong> Alle Aufmerksamkeit auf das stehende (operierte) Bein</li>
+                        <li><strong>Zeit:</strong> 30 Sekunden als Ziel</li>
+                        <li><strong>Beobachten:</strong> Wie reagiert das operierte Bein?</li>
+                    </ul>
+                    
+                    <h4>Mentale Fokussierung:</h4>
+                    <ul>
+                        <li>Spüre, wie die Muskeln im operierten Bein arbeiten</li>
+                        <li>Achte auf kleine Korrekturbewegungen</li>
+                        <li>Nicht verkrampfen! Locker bleiben</li>
+                    </ul>
+                    
+                    <h4>Variationen für Fortgeschrittene:</h4>
+                    <ul>
+                        <li>Stehendes Bein leicht beugen und strecken</li>
+                        <li>Mit dem gehobenen Bein kleine Kreise machen</li>
+                        <li>Kopf langsam nach rechts/links drehen</li>
+                    </ul>
+                    
+                    <h3>Ohne Halt (Woche 3-4)</h3>
+                    <h4>Mentale Vorbereitung:</h4>
+                    <ul>
+                        <li><strong>1. Versuch:</strong> Nur 10 Sekunden als Ziel</li>
+                        <li><strong>Mut fassen:</strong> Das operierte Bein kann das!</li>
+                        <li><strong>Notfallplan:</strong> Wand ist in Reichweite</li>
+                    </ul>
+                    
+                    <h4>Technik-Details:</h4>
+                    <ul>
+                        <li><strong>Arme:</strong> Seitlich ausgestreckt wie ein Seiltänzer</li>
+                        <li><strong>Blick:</strong> Festen Punkt in Augenhöhe fixieren</li>
+                        <li><strong>Atmung:</strong> Ruhig weiteratmen, nicht Luft anhalten</li>
+                        <li><strong>Körperspannung:</strong> Bauch leicht anspannen</li>
+                    </ul>
+                    
+                    <h4>Wenn's wackelt:</h4>
+                    <ul>
+                        <li><strong>Arme bewegen:</strong> Wie beim Balancieren auf einem Seil</li>
+                        <li><strong>Nicht aufgeben:</strong> 5-10 Sekunden Wackeln ist normal</li>
+                        <li><strong>Lernen:</strong> Jedes Wackeln trainiert die Tiefenmuskulatur</li>
+                    </ul>
+                    
+                    <h3>Augen geschlossen (Woche 5-6)</h3>
+                    <h4>Warum so schwer?</h4>
+                    <ul>
+                        <li>80% der Balance kommt vom Sehen</li>
+                        <li>Ohne Augen muss das operierte Bein viel mehr arbeiten</li>
+                        <li>Trainiert die Tiefensensoren im Fuß/Sprunggelenk</li>
+                    </ul>
+                    
+                    <h4>Sicherheits-Progression:</h4>
+                    <ul>
+                        <li><strong>Tag 1:</strong> Mit Halt, Augen zu, 10 Sekunden</li>
+                        <li><strong>Tag 3:</strong> Mit Halt, Augen zu, 15 Sekunden</li>
+                        <li><strong>Tag 5:</strong> Ohne Halt, Augen zu, 5 Sekunden</li>
+                        <li><strong>Woche 6:</strong> Ohne Halt, Augen zu, 20 Sekunden</li>
+                    </ul>
+                    
+                    <h4>Technik:</h4>
+                    <ul>
+                        <li>Erst mit offenen Augen stabil stehen</li>
+                        <li>Dann langsam Augen schließen</li>
+                        <li>Bei ersten Wackeln: Augen wieder auf!</li>
+                    </ul>
+                `
+            },
+            'step-ups': {
+                title: 'Step-ups (Stufentraining)',
+                content: `
+                    <h4>Equipment-Auswahl:</h4>
+                    <ul>
+                        <li><strong>Woche 1:</strong> Dickes Telefonbuch (5cm)</li>
+                        <li><strong>Woche 2:</strong> 2 Telefonbücher (8cm)</li>
+                        <li><strong>Woche 3:</strong> Aerobic-Step niedrigste Stufe (10cm)</li>
+                        <li><strong>Woche 4-5:</strong> Aerobic-Step mittlere Höhe (15cm)</li>
+                        <li><strong>Woche 6:</strong> Echte Treppenstufe (18cm)</li>
+                    </ul>
+                    
+                    <h3>Aufsteigen - Detailanalyse</h3>
+                    <h4>Schritt 1: Positionierung</h4>
+                    <ul>
+                        <li>Stehe 10cm vor der Stufe</li>
+                        <li>Operiertes Bein ist das "Arbeitsbein"</li>
+                        <li>Gesundes Bein ist das "Hilfsbein"</li>
+                    </ul>
+                    
+                    <h4>Schritt 2: Fußpositionierung</h4>
+                    <ul>
+                        <li>Ganzer Fuß auf die Stufe (nicht nur Zehenspitzen!)</li>
+                        <li>Fuß mittig auf der Stufe</li>
+                        <li>Knie zeigt gerade nach vorne</li>
+                    </ul>
+                    
+                    <h4>Schritt 3: Krafteinsatz</h4>
+                    <ul>
+                        <li>Operiertes Bein drückt hoch (macht die ganze Arbeit!)</li>
+                        <li>Gesundes Bein darf NICHT abdrücken vom Boden</li>
+                        <li>Kraft kommt aus Oberschenkel und Gesäß des operierten Beins</li>
+                    </ul>
+                    
+                    <h4>Schritt 4: Stabilisierung</h4>
+                    <ul>
+                        <li>Kurz auf der Stufe stehen bleiben</li>
+                        <li>Beide Füße nebeneinander auf der Stufe</li>
+                        <li>Balance checken</li>
+                    </ul>
+                    
+                    <h3>Absteigen - Sicherheitstechnik</h3>
+                    <h4>Warum gesundes Bein zuerst?</h4>
+                    <ul>
+                        <li>Gesundes Bein fängt den Körper ab</li>
+                        <li>Operiertes Bein muss weniger Aufprallkraft verkraften</li>
+                        <li>Reduziert Belastung auf die Metallplatten</li>
+                    </ul>
+                    
+                    <h4>Technik:</h4>
+                    <ul>
+                        <li>Gesundes Bein vorsichtig von Stufe runter</li>
+                        <li>Operiertes Bein kontrolliert nachsetzen</li>
+                        <li>Nicht springen! Jeder Fuß einzeln</li>
+                        <li>Weich landen: In die Knie gehen beim Aufkommen</li>
+                    </ul>
+                `
+            },
+            'balance-training': {
+                title: 'Balance-Training auf instabilem Untergrund',
+                content: `
+                    <h3>Weiche Matte (Woche 1-2)</h3>
+                    <h4>Setup:</h4>
+                    <ul>
+                        <li>Gefaltete Decke 4-fach oder dicke Yogamatte</li>
+                        <li>Erst mit Schuhen, dann barfuß (wenn angenehm)</li>
+                        <li>Wand in Armreichweite</li>
+                    </ul>
+                    
+                    <h4>Progression innerhalb der Woche:</h4>
+                    <ul>
+                        <li><strong>Tag 1-2:</strong> 30 Sekunden, beide Beine, Augen offen</li>
+                        <li><strong>Tag 3-4:</strong> 45 Sekunden, beide Beine</li>
+                        <li><strong>Tag 5-7:</strong> 60 Sekunden, beide Beine</li>
+                    </ul>
+                    
+                    <h4>Was passiert im Körper:</h4>
+                    <ul>
+                        <li>Kleine Muskeln um das Sprunggelenk müssen mehr arbeiten</li>
+                        <li>Propriozeptoren (Lagesensoren) werden aktiviert</li>
+                        <li>Gleichgewichtssystem wird herausgefordert</li>
+                    </ul>
+                    
+                    <h3>Balance Pad/Kissen (Woche 3-4)</h3>
+                    <h4>Material:</h4>
+                    <ul>
+                        <li>Sofakissen (weich und wackelig)</li>
+                        <li>Oder gefaltetes dickes Handtuch</li>
+                        <li>Oder spezielle Balance-Pads</li>
+                    </ul>
+                    
+                    <h4>Neue Herausforderung:</h4>
+                    <ul>
+                        <li><strong>Beidseits:</strong> 1 Minute auf beiden Beinen</li>
+                        <li><strong>Einbeinig:</strong> 30 Sekunden nur auf operiertem Bein</li>
+                        <li><strong>Koordination:</strong> Während des Stehens einfache Armbewegungen</li>
+                    </ul>
+                    
+                    <h4>Einbeinig-Technik:</h4>
+                    <ul>
+                        <li>Gesundes Bein nur 5cm heben (nicht übertreiben)</li>
+                        <li>Konzentration auf das operierte Bein auf dem Kissen</li>
+                        <li>Bei Verlust der Balance: Gesundes Bein absetzen</li>
+                    </ul>
+                    
+                    <h3>Wackelbrett (Woche 5-6)</h3>
+                    <h4>Falls vorhanden:</h4>
+                    <ul>
+                        <li>Professionelles Wackelbrett oder Kreisel</li>
+                        <li>Alternative: Halbierter Tennisball unter einem Brett</li>
+                    </ul>
+                    
+                    <h4>Progression:</h4>
+                    <ul>
+                        <li><strong>Mit Halt:</strong> Hand an Wand, 1 Minute</li>
+                        <li><strong>Weniger Halt:</strong> Nur Fingerspitzen an Wand</li>
+                        <li><strong>Ohne Halt:</strong> 2-3 Minuten freistehend</li>
+                    </ul>
+                    
+                    <h4>Bewegungsmuster:</h4>
+                    <ul>
+                        <li>Kreisende Bewegungen</li>
+                        <li>Vor-zurück wippen</li>
+                        <li>Seitlich wippen</li>
+                        <li>Versuchen, das Brett ruhig zu halten</li>
+                    </ul>
+                `
+            },
+            'tandem-walk': {
+                title: 'Tandem-Walk (Seiltänzer-Gang)',
+                content: `
+                    <h3>Grundtechnik</h3>
+                    <h4>Imaginäre Linie:</h4>
+                    <ul>
+                        <li>Stelle dir eine 20cm breite Linie auf dem Boden vor</li>
+                        <li>Oder verwende echtes Klebeband</li>
+                        <li>Oder gehe an einer geraden Fußleiste entlang</li>
+                    </ul>
+                    
+                    <h4>Fußposition Detail:</h4>
+                    <ul>
+                        <li>Ferse des vorderen Fußes berührt Zehen des hinteren Fußes</li>
+                        <li>Füße bleiben auf der imaginären Linie</li>
+                        <li>Nicht nebeneinander gehen!</li>
+                    </ul>
+                    
+                    <h4>Armhaltung:</h4>
+                    <ul>
+                        <li>Beide Arme seitlich auf Schulterhöhe</li>
+                        <li>Handflächen zeigen nach unten</li>
+                        <li>Arme dürfen sich zur Balance bewegen</li>
+                    </ul>
+                    
+                    <h4>Schritt-für-Schritt:</h4>
+                    <ul>
+                        <li><strong>Schritt 1:</strong> Rechter Fuß vor, Ferse zu linken Zehen</li>
+                        <li><strong>Pause:</strong> Kurz Balance finden</li>
+                        <li><strong>Schritt 2:</strong> Linker Fuß vor, Ferse zu rechten Zehen</li>
+                        <li><strong>Weiter:</strong> Langsam Schritt für Schritt</li>
+                    </ul>
+                    
+                    <h3>Progression der Schwierigkeit</h3>
+                    <h4>Woche 1:</h4>
+                    <ul>
+                        <li>8 Schritte mit einer Hand an der Wand</li>
+                        <li>Nach jedem 2. Schritt kurz pausieren</li>
+                    </ul>
+                    
+                    <h4>Woche 2:</h4>
+                    <ul>
+                        <li>12 Schritte, Hand nur bei Bedarf an Wand</li>
+                        <li>Kontinuierlicher gehen</li>
+                    </ul>
+                    
+                    <h4>Woche 3:</h4>
+                    <ul>
+                        <li>15 Schritte komplett freistehend</li>
+                        <li>Normale Geschwindigkeit</li>
+                    </ul>
+                    
+                    <h4>Woche 4:</h4>
+                    <ul>
+                        <li>20 Schritte ohne Pause</li>
+                        <li>Erste einfache Richtungsänderungen</li>
+                    </ul>
+                    
+                    <h4>Woche 5-6:</h4>
+                    <ul>
+                        <li>25-30 Schritte</li>
+                        <li>90°-Wendungen einbauen</li>
+                        <li>Verschiedene Geschwindigkeiten</li>
+                    </ul>
+                    
+                    <h4>Besonderheit bei Arthrodese:</h4>
+                    <ul>
+                        <li>Versteiftes Sprunggelenk macht Balancieren schwerer</li>
+                        <li>Nicht entmutigen lassen!</li>
+                        <li>Mehr Bewegung aus Hüfte und Knie nutzen</li>
+                    </ul>
+                `
+            },
+            'heel-to-toe': {
+                title: 'Heel-to-Toe Walking',
+                content: `
+                    <h3>Unterschied zum Tandem-Walk</h3>
+                    <ul>
+                        <li>Normale Schrittbreite (nicht Fuß vor Fuß)</li>
+                        <li>Fokus liegt auf der Abrollbewegung</li>
+                        <li>Hilft bei rundem Gangbild nach Arthrodese</li>
+                    </ul>
+                    
+                    <h3>Detaillierte Fußarbeit:</h3>
+                    
+                    <h4>Schritt 1: Fersenaufsatz</h4>
+                    <ul>
+                        <li>Ferse setzt zuerst auf dem Boden auf</li>
+                        <li>Zehen sind noch in der Luft</li>
+                        <li>Gewicht noch auf dem hinteren Fuß</li>
+                    </ul>
+                    
+                    <h4>Schritt 2: Abrollen</h4>
+                    <ul>
+                        <li>Gewicht rollt über den ganzen Fuß</li>
+                        <li>Von Ferse über Mittelfuß zu den Zehen</li>
+                        <li>Bei Arthrodese: Weniger Abrollbewegung, aber trotzdem versuchen</li>
+                    </ul>
+                    
+                    <h4>Schritt 3: Zehenabstoß</h4>
+                    <ul>
+                        <li>Gewicht auf die Zehen des vorderen Fußes</li>
+                        <li>Leichter Abstoß (soweit möglich)</li>
+                        <li>Hinterer Fuß hebt ab</li>
+                    </ul>
+                    
+                    <h4>Mentale Konzentration:</h4>
+                    <ul>
+                        <li>"Ferseee - Abroll - Zehen" im Kopf sprechen</li>
+                        <li>Jeden Schritt bewusst ausführen</li>
+                        <li>Nicht hetzen!</li>
+                    </ul>
+                    
+                    <h3>Häufige Fehler</h3>
+                    <ul>
+                        <li>Ganzer Fuß setzt auf einmal auf (Plattfuß-Gang)</li>
+                        <li>Zu schnell gehen</li>
+                        <li>Nur auf Zehenspitzen gehen</li>
+                        <li>Operiertes Bein "schonen" und anders belasten</li>
+                    </ul>
+                    
+                    <h4>Korrektur-Übung:</h4>
+                    <ul>
+                        <li>Erst im Sitzen die Bewegung üben</li>
+                        <li>Fuß langsam von Ferse zu Zehen bewegen</li>
+                        <li>Dann im Stehen auf der Stelle "marschieren"</li>
+                        <li>Erst dann gehend ausführen</li>
+                    </ul>
+                `
+            },
+            'gewichtsverlagerung': {
+                title: 'Gewichtsverlagerung stehend',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, Füße hüftbreit auseinander</li>
+                        <li>Die Arme hängen locker an den Seiten oder sind auf die Hüften gelegt</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li><strong>Verlagern:</strong> Verlagere das Gewicht auf das rechte Bein</li>
+                        <li><strong>Anheben:</strong> Das linke Bein leicht anheben (ca. 5-10 cm vom Boden)</li>
+                        <li><strong>Halten:</strong> Halte die Position für 10-30 Sekunden</li>
+                        <li><strong>Wechsel:</strong> Wechsle das Bein und wiederhole die Übung</li>
+                    </ul>
+                    
+                    <h4>Häufige Fehler:</h4>
+                    <ul>
+                        <li>Das Standbein ist nicht stabil</li>
+                        <li>Zu schnelles Anheben des anderen Beins</li>
+                        <li>Unsicheres Gleichgewicht</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>3-5 Mal pro Bein</p>
+                `
+            },
+            'fussalphabet': {
+                title: 'Fußalphabet',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Setze dich auf einen stabilen Stuhl oder eine Bank</li>
+                        <li>Die Füße flach auf dem Boden</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li><strong>Anheben:</strong> Hebe einen Fuß an und forme mit den Zehen das Alphabet in die Luft</li>
+                        <li><strong>Fortfahren:</strong> Beginne mit "A" und arbeite dich bis "Z" vor</li>
+                        <li><strong>Halten:</strong> Achte darauf, dass der Fuß die ganze Zeit in der Luft bleibt</li>
+                    </ul>
+                    
+                    <h4>Häufige Fehler:</h4>
+                    <ul>
+                        <li>Der Fuß berührt den Boden</li>
+                        <li>Zu hastiges Ausführen der Buchstaben</li>
+                        <li>Unsicheres Sitzen</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>1-2 Durchgänge pro Fuß</p>
+                `
+            },
+            'zehengang': {
+                title: 'Zehengang sitzend',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Setze dich auf einen stabilen Stuhl mit aufrechter Haltung</li>
+                        <li>Die Füße flach auf dem Boden</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li><strong>Anheben:</strong> Hebe die Zehen an, während die Fersen auf dem Boden bleiben</li>
+                        <li><strong>Halten:</strong> Halte die Position für 5-10 Sekunden</li>
+                        <li><strong>Senken:</strong> Senke die Zehen wieder ab und wiederhole die Übung</li>
+                    </ul>
+                    
+                    <h4>Häufige Fehler:</h4>
+                    <ul>
+                        <li>Fersen heben sich mit (nur Zehen heben!)</li>
+                        <li>Zu schnelle Bewegung</li>
+                        <li>Ungleichmäßige Belastung der Füße</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>10-15 Mal</p>
+                `
+            },
+            'hueftbeuger-dehnen': {
+                title: 'Hüftbeuger dehnen',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stelle dich aufrecht hin</li>
+                        <li>Ein Bein nach hinten ausstrecken</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Beuge das vordere Knie und schiebe das Becken nach vorne</li>
+                        <li>Halte die Dehnung für 20-30 Sekunden</li>
+                        <li>Wechsle das Bein und wiederhole die Übung</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>2-3 Mal pro Bein</p>
+                `
+            },
+            'achillessehne-dehnen': {
+                title: 'Achillessehne dehnen',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stelle dich vor eine Wand, eine Fußspitze auf den Boden</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Beuge das vordere Knie und halte das hintere Bein gerade</li>
+                        <li>Drücke die Ferse des hinteren Fußes in den Boden</li>
+                        <li>Halte die Dehnung für 20-30 Sekunden</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>2-3 Mal pro Bein</p>
+                `
+            },
+            'treppen': {
+                title: 'Treppen (Allgemeines Treppentraining)',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe vor einer Treppe</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Steige mit dem operierten Bein zuerst auf die unterste Stufe</li>
+                        <li>Drücke dich hoch und ziehe das andere Bein nach</li>
+                        <li>Achte darauf, dass die gesamte Fußfläche auf der Stufe steht</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>8-12 Mal rauf und runter</p>
+                `
+            },
+            'propriozeption': {
+                title: 'Propriozeption',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe auf einem stabilen Untergrund</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Schließe die Augen und versuche, das Gleichgewicht zu halten</li>
+                        <li>Variiere die Position des Körpers (z.B. Arme anheben, Kopf drehen)</li>
+                    </ul>
+                    
+                    <h4>Dauer:</h4>
+                    <p>20-30 Sekunden, 3-5 Mal</p>
+                `
+            },
+            'richtungsaenderungen': {
+                title: 'Richtungsänderungen 90°/180°',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, Füße hüftbreit</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Drehe dich langsam um 90° nach rechts</li>
+                        <li>Halte kurz an und drehe dich dann um 180° nach links</li>
+                        <li>Führe die Bewegungen kontrolliert aus</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>5-10 Mal in jede Richtung</p>
+                `
+            },
+            'koordination': {
+                title: 'Koordination',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, Füße hüftbreit</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Mache abwechselnd einen Schritt nach vorne mit dem rechten Fuß und hebe den linken Arm</li>
+                        <li>Wechsle die Seite und mache das Gleiche mit dem linken Fuß und dem rechten Arm</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>10-15 Mal pro Seite</p>
+                `
+            },
+            'resistance-band': {
+                title: 'Resistance Band Übungen',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Setze dich auf einen Stuhl und halte ein Widerstandsband</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Lege das Band um die Fußsohlen</li>
+                        <li>Ziehe das Band in Richtung deiner Brust, während du die Ellbogen beugst</li>
+                        <li>Halte die Position kurz und lasse das Band langsam zurück</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>10-15 Mal</p>
+                `
+            },
+            'mobilisation': {
+                title: 'Mobilisation',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Setze dich auf einen Stuhl mit aufrechter Haltung</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Bewege die Schultern in kreisenden Bewegungen vorwärts und rückwärts</li>
+                        <li>Führe die Bewegungen langsam und kontrolliert aus</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>10-15 Mal in jede Richtung</p>
+                `
+            },
+            'lateral-steps': {
+                title: 'Lateral Steps',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, Füße hüftbreit</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Mache einen Schritt zur Seite mit dem rechten Fuß</li>
+                        <li>Ziehe das linke Bein nach und stelle es neben das rechte</li>
+                        <li>Wiederhole die Bewegung zur linken Seite</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>10-15 Mal pro Seite</p>
+                `
+            },
+            'funktionelle-bewegungen': {
+                title: 'Funktionelle Bewegungen',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht mit einem Stuhl in der Nähe</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Setze dich langsam auf den Stuhl und stehe dann wieder auf</li>
+                        <li>Achte darauf, die Bewegung kontrolliert auszuführen</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>10-15 Mal</p>
+                `
+            },
+            'alltagsintegration': {
+                title: 'Alltagsintegration',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Führe alltägliche Bewegungen wie das Aufstehen, Sitzen und Gehen durch</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Integriere die Übungen in deinen Alltag</li>
+                        <li>Achte darauf, die richtige Technik beizubehalten</li>
+                    </ul>
+                `
+            },
+            'reaktionstraining': {
+                title: 'Reaktions-Training/Reaktionstraining',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, ein Partner oder ein Ball ist in der Nähe</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Lass dir einen Ball zuwerfen und reagiere schnell</li>
+                        <li>Versuche, den Ball mit einer Hand zu fangen</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>5-10 Mal</p>
+                `
+            },
+            'gleichgewichtstests': {
+                title: 'Gleichgewichtstests',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe auf einem Bein</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Halte das Gleichgewicht für 30 Sekunden</li>
+                        <li>Variiere die Position des freien Beins und der Arme</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>2-3 Mal pro Bein</p>
+                `
+            },
+            'komplexe-koordination': {
+                title: 'Komplexe Koordination',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, Füße hüftbreit</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Bewege gleichzeitig die Arme und Beine in entgegengesetzte Richtungen</li>
+                        <li>Achte auf eine kontrollierte Ausführung</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>10-15 Mal</p>
+                `
+            },
+            'multitasking': {
+                title: 'Multitasking',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, mit einem Ball oder einem kleinen Gegenstand</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Balanciere den Ball auf einer Hand und gehe gleichzeitig ein paar Schritte</li>
+                        <li>Wechsle die Hand und wiederhole die Übung</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>5-10 Mal</p>
+                `
+            },
+            'gangbild-optimieren': {
+                title: 'Gangbild optimieren',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht und gehe langsam</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Achte auf eine aufrechte Haltung und gleichmäßige Schritte</li>
+                        <li>Versuche, die Fußspitzen leicht nach außen zu drehen</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>5-10 Minuten gehen</p>
+                `
+            },
+            'selbstvertrauen': {
+                title: 'Selbstvertrauen/Vertrauen festigen',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, umgeben von Freunden oder Familie</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Führe einfache Übungen durch und erhalte positives Feedback</li>
+                        <li>Konzentriere dich auf deine Fortschritte</li>
+                    </ul>
+                `
+            },
+            'komplexe-balance': {
+                title: 'Komplexe Balance',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe auf einem Bein</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Schließe die Augen und halte das Gleichgewicht</li>
+                        <li>Variiere die Position des Körpers (z.B. Arme heben oder beugen)</li>
+                    </ul>
+                    
+                    <h4>Dauer:</h4>
+                    <p>20-30 Sekunden, 2-3 Mal</p>
+                `
+            },
+            'augen-geschlossen': {
+                title: 'Augen geschlossen (allgemein)',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Schließe die Augen und halte das Gleichgewicht</li>
+                        <li>Achte darauf, die Position zu halten</li>
+                    </ul>
+                    
+                    <h4>Dauer:</h4>
+                    <p>20-30 Sekunden, 2-3 Mal</p>
+                `
+            },
+            'koordinationsuebungen-kombinieren': {
+                title: 'Alle Koordinationsübungen kombinieren',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe aufrecht, Füße hüftbreit</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Kombiniere verschiedene Koordinationsübungen (z.B. Armbewegungen und Beinbewegungen)</li>
+                        <li>Achte auf eine kontrollierte Ausführung</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>5-10 Minuten</p>
+                `
+            },
+            'realitaetstest': {
+                title: 'Realitätstest',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Gehe in einer belebten Umgebung</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Achte auf deine Umgebung und reagiere auf verschiedene Reize (z.B. Menschen, Geräusche)</li>
+                        <li>Halte das Gleichgewicht und gehe weiter</li>
+                    </ul>
+                `
+            },
+            'ausdauer-test': {
+                title: 'Ausdauer-Test',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Gehe auf einem ebenen Untergrund</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Gehe für eine festgelegte Zeit (z.B. 10-20 Minuten)</li>
+                        <li>Achte auf eine gleichmäßige Atmung und Körperhaltung</li>
+                    </ul>
+                `
+            },
+            'maximaler-treppen-test': {
+                title: 'Maximaler Treppen-Test',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Stehe vor einer Treppe</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Steige so schnell wie möglich die Treppe hoch und wieder runter</li>
+                        <li>Achte darauf, die Stufen sicher zu betreten</li>
+                    </ul>
+                    
+                    <h4>Wiederholungen:</h4>
+                    <p>3-5 Mal</p>
+                `
+            },
+            'konditions-check': {
+                title: 'Konditions-Check',
+                content: `
+                    <h4>Ausgangsposition:</h4>
+                    <ul>
+                        <li>Gehe auf einem ebenen Untergrund</li>
+                    </ul>
+                    
+                    <h4>Bewegungsausführung:</h4>
+                    <ul>
+                        <li>Gehe für eine festgelegte Zeit (z.B. 20-30 Minuten) und achte auf dein Tempo</li>
+                        <li>Mache regelmäßig Pausen, um die Erschöpfung zu vermeiden</li>
+                    </ul>
+                `
+            }
+        };
+
+        // Function to extract exercise names from additional exercises text
+        function getExerciseHelp(additionalText) {
+            const exercises = [];
+            const text = additionalText.toLowerCase();
+            
+            if (text.includes('wadenheben')) {
+                exercises.push({name: 'wadenheben', display: 'Wadenheben'});
+            }
+            if (text.includes('mini-squats') || text.includes('squats')) {
+                exercises.push({name: 'mini-squats', display: 'Mini-Squats'});
+            }
+            if (text.includes('einbeinstand')) {
+                exercises.push({name: 'einbeinstand', display: 'Einbeinstand'});
+            }
+            if (text.includes('step-ups')) {
+                exercises.push({name: 'step-ups', display: 'Step-ups'});
+            }
+            if (text.includes('balance') && (text.includes('matte') || text.includes('kissen') || text.includes('training'))) {
+                exercises.push({name: 'balance-training', display: 'Balance-Training'});
+            }
+            if (text.includes('tandem-walk')) {
+                exercises.push({name: 'tandem-walk', display: 'Tandem-Walk'});
+            }
+            if (text.includes('heel-to-toe')) {
+                exercises.push({name: 'heel-to-toe', display: 'Heel-to-Toe'});
+            }
+            if (text.includes('gewichtsverlagerung')) {
+                exercises.push({name: 'gewichtsverlagerung', display: 'Gewichtsverlagerung'});
+            }
+            if (text.includes('fußalphabet')) {
+                exercises.push({name: 'fussalphabet', display: 'Fußalphabet'});
+            }
+            if (text.includes('zehengang')) {
+                exercises.push({name: 'zehengang', display: 'Zehengang'});
+            }
+            if (text.includes('hüftbeuger') && text.includes('dehnen')) {
+                exercises.push({name: 'hueftbeuger-dehnen', display: 'Hüftbeuger dehnen'});
+            }
+            if (text.includes('achillessehne') && text.includes('dehnen')) {
+                exercises.push({name: 'achillessehne-dehnen', display: 'Achillessehne dehnen'});
+            }
+            if (text.includes('treppen') && !text.includes('test')) {
+                exercises.push({name: 'treppen', display: 'Treppen'});
+            }
+            if (text.includes('propriozeption')) {
+                exercises.push({name: 'propriozeption', display: 'Propriozeption'});
+            }
+            if (text.includes('richtungsänderungen') || (text.includes('90°') || text.includes('180°'))) {
+                exercises.push({name: 'richtungsaenderungen', display: 'Richtungsänderungen'});
+            }
+            if (text.includes('koordination') && !text.includes('komplexe')) {
+                exercises.push({name: 'koordination', display: 'Koordination'});
+            }
+            if (text.includes('resistance') && text.includes('band')) {
+                exercises.push({name: 'resistance-band', display: 'Resistance Band'});
+            }
+            if (text.includes('mobilisation')) {
+                exercises.push({name: 'mobilisation', display: 'Mobilisation'});
+            }
+            if (text.includes('lateral') && text.includes('steps')) {
+                exercises.push({name: 'lateral-steps', display: 'Lateral Steps'});
+            }
+            if (text.includes('funktionelle') && text.includes('bewegungen')) {
+                exercises.push({name: 'funktionelle-bewegungen', display: 'Funktionelle Bewegungen'});
+            }
+            if (text.includes('alltagsintegration')) {
+                exercises.push({name: 'alltagsintegration', display: 'Alltagsintegration'});
+            }
+            if (text.includes('reaktions-training') || text.includes('reaktionstraining')) {
+                exercises.push({name: 'reaktionstraining', display: 'Reaktionstraining'});
+            }
+            if (text.includes('gleichgewichtstests')) {
+                exercises.push({name: 'gleichgewichtstests', display: 'Gleichgewichtstests'});
+            }
+            if (text.includes('komplexe') && text.includes('koordination')) {
+                exercises.push({name: 'komplexe-koordination', display: 'Komplexe Koordination'});
+            }
+            if (text.includes('multitasking')) {
+                exercises.push({name: 'multitasking', display: 'Multitasking'});
+            }
+            if (text.includes('gangbild') && text.includes('optimieren')) {
+                exercises.push({name: 'gangbild-optimieren', display: 'Gangbild optimieren'});
+            }
+            if (text.includes('selbstvertrauen') || text.includes('vertrauen') && text.includes('festigen')) {
+                exercises.push({name: 'selbstvertrauen', display: 'Selbstvertrauen'});
+            }
+            if (text.includes('komplexe') && text.includes('balance')) {
+                exercises.push({name: 'komplexe-balance', display: 'Komplexe Balance'});
+            }
+            if (text.includes('augen') && text.includes('geschlossen') && !text.includes('balance')) {
+                exercises.push({name: 'augen-geschlossen', display: 'Augen geschlossen'});
+            }
+            if (text.includes('koordinationsübungen') && text.includes('kombinieren')) {
+                exercises.push({name: 'koordinationsuebungen-kombinieren', display: 'Koordinationsübungen kombinieren'});
+            }
+            if (text.includes('realitätstest')) {
+                exercises.push({name: 'realitaetstest', display: 'Realitätstest'});
+            }
+            if (text.includes('ausdauer-test')) {
+                exercises.push({name: 'ausdauer-test', display: 'Ausdauer-Test'});
+            }
+            if (text.includes('maximaler') && text.includes('treppen-test')) {
+                exercises.push({name: 'maximaler-treppen-test', display: 'Maximaler Treppen-Test'});
+            }
+            if (text.includes('konditions-check')) {
+                exercises.push({name: 'konditions-check', display: 'Konditions-Check'});
+            }
+            
+            return exercises;
+        }
+
+        // Function to show exercise instructions
+        function showExerciseInstructions(exerciseName) {
+            const instruction = exerciseInstructions[exerciseName];
+            if (instruction) {
+                document.getElementById('exerciseContent').innerHTML = 
+                    `<h2>${instruction.title}</h2>${instruction.content}`;
+                document.getElementById('exerciseModal').style.display = 'block';
+            }
+        }
+
+        // Function to close modal
+        function closeModal() {
+            document.getElementById('exerciseModal').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('exerciseModal');
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Updated renderWeek function to include help buttons
+        function renderWeek(week) {
+            const weekData = trainingPlan[week];
+            const content = document.getElementById('weekContent');
+            
+            let html = `
+                <div style="margin: 20px; padding: 15px; background: #e3f2fd; border-radius: 8px; text-align: center;">
+                    <h2>${weekData.title}</h2>
+                    <p><strong>Ziel:</strong> ${weekData.goal}</p>
+                </div>
+            `;
+            
+            Object.entries(weekData.days).forEach(([day, data]) => {
+                const dayKey = `${week}-${day}`;
+                const isCompleted = completedDays[dayKey] || false;
+                const exercises = getExerciseHelp(data.additional);
+                
+                let exerciseHelpButtons = '';
+                exercises.forEach(exercise => {
+                    exerciseHelpButtons += `<span class="exercise-help" onclick="showExerciseInstructions('${exercise.name}')" title="${exercise.display} Anleitung">?</span>`;
+                });
+                
+                html += `
+                    <div class="day-card ${isCompleted ? 'completed' : ''}">
+                        <div class="day-header">
+                            <div class="day-title">${day}</div>
+                            <input type="checkbox" class="completion-checkbox" 
+                                   ${isCompleted ? 'checked' : ''} 
+                                   onchange="toggleDay('${dayKey}')">
+                        </div>
+                        <div class="day-content">
+                            <div class="training-item">
+                                <div class="training-label">Bestehendes Training:</div>
+                                <div class="training-value">${data.existing}</div>
+                            </div>
+                            <div class="training-item">
+                                <div class="training-label">Geh-Training ohne Krücken:</div>
+                                <div class="training-value">${data.walking}</div>
+                            </div>
+                            <div class="training-item">
+                                <div class="training-label">Zusätzliche Übungen:</div>
+                                <div class="training-value">${data.additional}${exerciseHelpButtons}</div>
+                            </div>
+                            <div class="training-item goal">
+                                <div class="training-label">Tagesziel:</div>
+                                <div class="training-value">${data.target}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            content.innerHTML = html;
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            showWeek(1);
+        });
+    </script>
+</body>
+</html>
